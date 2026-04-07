@@ -1,0 +1,3 @@
+# 告诉Git"这些文件不要追踪、不要上传"。你把 .env 和 node_modules 写进去，就是在说"这两个永远不要提交到代码仓库"
+.env
+node_modules

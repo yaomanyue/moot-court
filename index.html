@@ -1,0 +1,47 @@
+<!-- 告诉浏览器"这是一个HTML文件" -->
+<!DOCTYPE html>
+<!-- 整个页面的根标签，`lang="zh"` 说明是中文页面 -->
+<html lang="zh">
+    <!-- 头部，放页面的配置信息，用户看不到 -->
+<head>
+    <!-- — 声明编码格式，防止中文乱码 -->
+    <meta charset="UTF-8">
+    <!-- 浏览器标签页上显示的标题 -->
+    <title>模拟法庭</title>
+</head>
+<!-- 正文，用户看到的内容都放这里 -->
+<body>
+  <!-- 开庭区域 -->
+  <div id="setup">
+    <!-- 一级标题 -->
+    <h1>模拟法庭</h1>
+    <p>案情描述</p>
+    <textarea id="case-input" rows="6" placeholder="请输入案情事实、当事人信息、诉讼请求…"></textarea>
+     
+     <p>你的身份</p>
+    <select id="role-select">
+      <option value="plaintiff">原告律师</option>
+      <option value="defendant">被告律师</option>
+    </select>
+    
+    <br><br>
+    <button id="start-btn">开庭</button>
+  </div>
+    <!-- 阶段显示条 -->
+    <div id="phase-bar" style="display:none;">
+        <span id="phase-name">开庭陈述</span>
+        <button id="next-phase-btn">进入下一阶段 →</button>
+    </div> 
+   
+    <!-- 庭审区域，默认隐藏 -->
+    <div id="court" style="display: none;">
+     <!-- 对话显示区域 -->
+      <div id="messages"></div>
+      <textarea id="input" rows="3" placeholder="输入你的发言…"></textarea>
+      <button id="send-btn">发言</button>
+  <!-- 输入区域 -->
+     </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
