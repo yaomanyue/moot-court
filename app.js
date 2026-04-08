@@ -24,6 +24,12 @@ const phases = [
 let caseText = ''
 let userRole = ''
 
+// 存储每个阶段的摘要
+const phaseSummaries = []
+
+// 当前阶段在 history 中的起始位置
+let currentPhaseStartIndex = 0
+
 // 【新增】一个标记，防止用户在 AI 发言期间重复点击发送
 let isProcessing = false
 
@@ -54,15 +60,44 @@ function getUserLawyerName() {
   return userRole === 'plaintiff' ? '原告律师' : '被告律师'
 }
 
-// 【新增】把 history 数组拼成一段庭审记录文本
-// 这段文本会塞进每次 API 请求里，让每个角色都能看到完整的庭审过程
+// 把庭审记录拼成文本，发给各个角色
+// 【改动】已完成阶段用摘要，当前阶段用完整记录
 function buildTranscript() {
-  // 如果还没有任何对话，返回空字符串
-  if (history.length === 0) return '（庭审尚未开始）'
+  let parts = []
 
-  // 把每条记录拼成 "法官：现在开庭……" 的格式
-  return history.map(h => `${h.speaker}：${h.content}`).join('\n')
+  // 1. 已完成阶段的摘要
+  if (phaseSummaries.length > 0) {
+    parts.push('=== 已完成阶段摘要 ===')
+    phaseSummaries.forEach(s => {
+      parts.push(`【${s.phaseName}】${s.summary}`)
+    })
+  }
+
+  // 2. 当前阶段的完整记录
+  const currentRecords = history.slice(currentPhaseStartIndex)
+  if (currentRecords.length > 0) {
+    parts.push(`\n=== 当前阶段：${phases[currentPhase].name} ===`)
+    currentRecords.forEach(h => {
+      parts.push(`${h.speaker}：${h.content}`)
+    })
+  }
+
+  if (parts.length === 0) return '（庭审尚未开始）'
+  return parts.join('\n')
 }
+
+// 摘要员的 system prompt
+function getSummarySystem() {
+  return `你是庭审记录摘要员。你的任务是将一个庭审阶段的完整对话记录浓缩成简洁的摘要。
+
+要求：
+- 保留关键事实、各方核心主张、重要证据、法官的关键认定
+- 去掉重复内容、程序性套话、礼貌用语
+- 摘要控制在200字以内
+- 用客观中立的语气，不加入自己的判断
+- 直接输出摘要内容，不要加标题或前缀`
+}
+
 
 // 动态生成法官的 system prompt
 function getJudgeSystem() {
@@ -337,9 +372,20 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
 
     if (next.includes('结束')) {
       // === 当前阶段结束 ===
-      // 注意：阶段的更新已经在 dispatch 函数里根据语义判断自动完成了
-      // 这里不需要手动 currentPhase++
-      addMessage('系统', `"${phases[currentPhase].name}"阶段结束。`)
+      const endedPhaseName = phases[currentPhase].name
+      addMessage('系统', `"${endedPhaseName}"阶段结束。`)
+
+      // 生成这个阶段的摘要
+      const phaseRecords = history.slice(currentPhaseStartIndex)
+      if (phaseRecords.length > 0) {
+        addMessage('系统', '正在生成阶段摘要……')
+        const summary = await generateSummary(endedPhaseName, phaseRecords)
+        phaseSummaries.push({ phaseName: endedPhaseName, summary: summary })
+        console.log(`[摘要] ${endedPhaseName}：${summary}`)
+      }
+
+      // 更新起始位置，下个阶段的记录从这里开始
+      currentPhaseStartIndex = history.length
 
       // 如果已经是最后一个阶段（裁决），触发复盘后退出
       if (currentPhase >= phases.length - 1) {
@@ -350,7 +396,7 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
       // 继续循环，让 dispatch 判断新阶段谁先说话
       lastSpeaker = '系统'
       lastContent = `当前阶段：${phases[currentPhase].name}，请继续推进庭审。`
-      continue  // 回到 while 循环顶部，继续调度
+      continue
     }
 
     if (next.includes('法官')) {
@@ -397,6 +443,27 @@ async function runDebrief() {
   history.push({ speaker: '复盘分析', content: reply })
 }
 
+// 调 API 生成某个阶段的摘要
+async function generateSummary(phaseName, records) {
+  // 把这个阶段的记录拼成文本
+  const text = records.map(h => `${h.speaker}：${h.content}`).join('\n')
+
+  const response = await fetch('/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system: getSummarySystem(),
+      messages: [
+        {
+          role: 'user',
+          content: `请对以下"${phaseName}"阶段的庭审记录进行摘要：\n\n${text}`
+        }
+      ]
+    })
+  })
+  const data = await response.json()
+  return data.reply
+}
 
 // ============================================
 // 第五块：事件绑定
