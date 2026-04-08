@@ -209,8 +209,8 @@ function getDispatchSystem() {
 2. 判断下一个该谁发言
 
 本场庭审角色：
-- ${plaintiffLabel}
-- ${defendantLabel}
+- ${plaintiffLabel}-原告
+- ${defendantLabel}-被告
 - 法官（AI）
 
 **输出映射规则**：
@@ -223,12 +223,12 @@ function getDispatchSystem() {
 - 阶段内部的发言顺序由你来安排，按照下面的规则执行，但是，如果法官在发言中明确指定了下一个发言人（如"请原告律师……""请被告律师……"），以法官的指令为准
 - 当一个阶段内所有步骤走完后，输出"法官"让法官来做总结或推进到下一阶段
 
-各阶段内部发言顺序：
-0. 开庭陈述：法官宣布开庭→${plaintiffLabel}陈述→${defendantLabel}答辩→法官（总结或推进）
-1. 归纳焦点：法官总结争议焦点并询问双方是否有异议→${plaintiffLabel}回应→${defendantLabel}回应→双方都回应完毕后交回法官（调整焦点内容或推进庭审流程）
-2. 举证质证：由法官主导举证质证的全部流程，包括原告举证 → 被告质证 → 被告举证 → 原告质证，具体顺序和节奏由法官安排。举证质证阶段，每次一方发言完毕后发言权需要交回法官
-3. 法庭辩论：法官宣布进行法庭辩论→${plaintiffLabel}发言→${defendantLabel}发言→法官决定是否继续（继续则重复上述循环）。双方各发言2-3轮后（一轮=双方各说一次），如果没有出现全新的论点或证据，应立即输出"法官"让法官收场。
-4. 最终陈述：法官宣布进行最终陈述→${plaintiffLabel}陈述→${defendantLabel}陈述→双方都陈述完毕后交回法官确认
+各阶段内部发言流程：
+0. 开庭陈述：法官宣布开庭→原告陈述→被告答辩→法官（总结或推进），具体顺序和节奏由法官安排
+1. 归纳焦点：法官总结争议焦点并询问双方是否有异议→原告回应→被告回应→双方都回应完毕后交回法官（调整或推进）
+2. 举证质证：由法官主导举证质证的全部流程，包括原告举证→被告质证→被告举证→原告质证，具体顺序和节奏由法官安排。举证质证阶段，每次一方发言完毕后发言权需要交回法官
+3. 法庭辩论：法官宣布进行法庭辩论→原告发言→被告发言→法官决定是否继续（继续则重复上述循环）。双方各发言2-3轮后（一轮=双方各说一次），如果没有出现全新的论点或证据，应立即输出"法官"让法官收场。
+4. 最终陈述：法官宣布进行最终陈述→原告陈述→被告陈述→双方都陈述完毕后交回法官确认
 5. 裁决：法官作出裁决→结束
 
 庭审阶段编号对照：
@@ -328,12 +328,26 @@ ${transcript}
   const action = parts[0].trim()           // "法官"/"用户"/"对方律师"/"结束"
   const phaseNum = parseInt(parts[1])       // 0-6 的数字
 
-  // 如果 dispatch 返回了有效的阶段编号，且和代码里的不同，就更新
+// 如果 dispatch 返回了有效的阶段编号，且和代码里的不同，就更新
   if (!isNaN(phaseNum) && phaseNum >= 0 && phaseNum < phases.length && phaseNum !== currentPhase) {
-    const oldPhase = phases[currentPhase].name
+    const oldPhaseName = phases[currentPhase].name
+
+    // 生成上一个阶段的摘要
+    const phaseRecords = history.slice(currentPhaseStartIndex)
+    if (phaseRecords.length > 0) {
+      addMessage('系统', `正在生成"${oldPhaseName}"阶段摘要……`)
+      const summary = await generateSummary(oldPhaseName, phaseRecords)
+      phaseSummaries.push({ phaseName: oldPhaseName, summary: summary })
+      console.log(`[摘要] ${oldPhaseName}：${summary}`)
+    }
+
+    // 更新起始位置，下个阶段的记录从这里开始
+    currentPhaseStartIndex = history.length
+
+    // 更新阶段
     currentPhase = phaseNum
     updatePhaseBar()
-    console.log(`[调度] 阶段更新：${oldPhase} → ${phases[currentPhase].name}`)
+    console.log(`[调度] 阶段更新：${oldPhaseName} → ${phases[currentPhase].name}`)
     addMessage('系统', `进入新阶段："${phases[currentPhase].name}"`)
   }
 
