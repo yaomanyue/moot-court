@@ -44,6 +44,7 @@ const messagesDiv = document.getElementById('messages')
 const input = document.getElementById('input')
 const sendBtn = document.getElementById('send-btn')
 const startBtn = document.getElementById('start-btn')
+const phaseSteps = document.getElementById('phase-steps')
 
 
 // ============================================
@@ -91,9 +92,8 @@ function getSummarySystem() {
   return `你是庭审记录摘要员。你的任务是将一个庭审阶段的完整对话记录浓缩成简洁的摘要。
 
 要求：
-- 保留关键事实、各方核心主张、重要证据、法官的关键认定
+- 保留关键事实、各方核心主张、争议焦点、重要证据、法官的关键认定
 - 去掉重复内容、程序性套话、礼貌用语
-- 摘要控制在200字以内
 - 用客观中立的语气，不加入自己的判断
 - 直接输出摘要内容，不要加标题或前缀`
 }
@@ -254,17 +254,106 @@ function getDispatchSystem() {
 }
 
 // 把消息添加到页面上
+// 【改动】新的消息结构：左侧颜色条 + 角色名 + 内容
 function addMessage(role, text) {
-  const p = document.createElement('p')
-  p.textContent = role + '：' + text
-  messagesDiv.appendChild(p)
-  // 【新增】自动滚动到底部，方便看最新消息
+  // 根据角色决定 CSS class
+  // 法官 → msg-judge，用户 → msg-user，AI律师 → msg-ai，其他 → msg-system
+  let roleClass = 'msg-system'   // 默认是系统消息
+  if (role === '法官') {
+    roleClass = 'msg-judge'
+  } else if (role === getUserLawyerName()) {
+    roleClass = 'msg-user'
+  } else if (role === getAiLawyerName()) {
+    roleClass = 'msg-ai'
+  }
+
+  // 创建消息容器
+  const msg = document.createElement('div')
+  msg.className = `msg ${roleClass}`
+  // className 用模板字符串拼接，结果类似 "msg msg-judge"
+  // 这样 CSS 里 .msg 的样式和 .msg-judge 的样式都会生效
+
+  // 左侧颜色条
+  const bar = document.createElement('div')
+  bar.className = 'msg-bar'
+
+  // 右侧消息主体
+  const body = document.createElement('div')
+  body.className = 'msg-body'
+
+  // 角色名
+  const speaker = document.createElement('div')
+  speaker.className = 'msg-speaker'
+  speaker.textContent = role
+
+  // 消息内容
+  const content = document.createElement('div')
+  content.className = 'msg-content'
+  content.textContent = text
+
+  // 组装：body 里放 speaker 和 content
+  body.appendChild(speaker)
+  body.appendChild(content)
+
+  // msg 里放 bar 和 body
+  msg.appendChild(bar)
+  msg.appendChild(body)
+
+  // 塞进页面
+  messagesDiv.appendChild(msg)
   messagesDiv.scrollTop = messagesDiv.scrollHeight
 }
 
-// 更新阶段显示条
+// 更新阶段进度条
+// 每次调用都重新渲染所有步骤，根据 currentPhase 决定每个步骤的状态
 function updatePhaseBar() {
-  document.getElementById('phase-name').textContent = phases[currentPhase].name
+  // 先清空容器里的旧内容
+  phaseSteps.innerHTML = ''
+
+  phases.forEach((phase, i) => {
+    // --- 创建单个步骤容器 ---
+    const step = document.createElement('div')
+    step.className = 'phase-step'
+
+    // --- 创建圆点 ---
+    const dot = document.createElement('div')
+    // 三种状态：已完成(done)、当前(current)、未来(upcoming)
+    if (i < currentPhase) {
+      dot.className = 'phase-dot done'
+      dot.textContent = '✓'            // 已完成的打勾
+    } else if (i === currentPhase) {
+      dot.className = 'phase-dot current'
+      dot.textContent = i + 1           // 当前阶段显示数字
+    } else {
+      dot.className = 'phase-dot upcoming'
+      dot.textContent = i + 1           // 未来阶段显示数字
+    }
+
+    // --- 创建文字标签 ---
+    const label = document.createElement('div')
+    label.textContent = phase.name
+    if (i < currentPhase) {
+      label.className = 'phase-step-label done-label'
+    } else if (i === currentPhase) {
+      label.className = 'phase-step-label current-label'
+    } else {
+      label.className = 'phase-step-label'
+    }
+
+    // --- 创建连接线（最后一个步骤不需要） ---
+    if (i < phases.length - 1) {
+      const connector = document.createElement('div')
+      // 已完成的步骤之间的线也变红
+      connector.className = i < currentPhase ? 'phase-connector done-line' : 'phase-connector'
+      step.appendChild(connector)
+    }
+
+    // 组装
+    step.appendChild(dot)
+    step.appendChild(label)
+
+    phaseSteps.appendChild(step)
+  })
 }
 
 
@@ -498,7 +587,6 @@ startBtn.addEventListener('click', async () => {
   // 隐藏开局区域，显示庭审区域
   setup.style.display = 'none'
   court.style.display = 'block'
-  document.getElementById('phase-bar').style.display = 'block'
 
   // 更新阶段显示
   updatePhaseBar()

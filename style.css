@@ -1,0 +1,318 @@
+/* ========== 全局重置与基础样式 ========== */
+
+/* 让所有元素的宽高计算包含 padding 和 border，不会撑破布局 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 页面整体设定 */
+body {
+    font-family: 'Noto Sans SC', sans-serif;   /* 默认字体：思源黑体 */
+    background-color: #FAF8F5;                  /* 暖白色背景 */
+    color: #2C2826;                             /* 默认文字颜色：深棕灰 */
+    line-height: 1.6;                           /* 行高，让文字不挤在一起 */
+}
+
+
+/* ========== 开庭前页面 ========== */
+
+#setup {
+    max-width: 480px;           /* 最大宽度 480px，不会撑满整个屏幕 */
+    margin: 60px auto;          /* 上方留 60px，auto 表示左右自动居中 */
+    padding: 0 20px;            /* 左右留 20px 内边距，防止贴边 */
+}
+
+/* 顶部标题区域 */
+.setup-header {
+    text-align: center;                  /* 内容水平居中 */
+    padding-bottom: 24px;                /* 下方内边距 */
+    margin-bottom: 32px;                 /* 下方外边距 */
+    border-bottom: 1px solid rgba(139, 37, 0, 0.1);  /* 底部细线 */
+}
+
+.setup-title {
+    font-family: 'Noto Serif SC', serif; /* 用衬线字体，正式感 */
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 4px;                 /* 字间距，拉开后更庄重 */
+    color: #2C2826;
+    margin-bottom: 6px;
+}
+
+.setup-subtitle {
+    font-size: 13px;
+    color: #9E9895;                      /* 浅灰色，不抢主标题风头 */
+}
+
+/* 表单区域 */
+.form-group {
+    margin-bottom: 20px;                 /* 每组之间的间距 */
+}
+
+.form-label {
+    display: block;                      /* 让 label 独占一行 */
+    font-size: 13px;
+    font-weight: 500;
+    color: #6B6360;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.form-textarea {
+    width: 100%;                         /* 撑满父容器宽度 */
+    padding: 12px 14px;                  /* 内边距：上下12px，左右14px */
+    border: 1px solid rgba(139, 37, 0, 0.15);
+    border-radius: 8px;                  /* 圆角 */
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: #2C2826;
+    background-color: #FFFFFF;
+    resize: vertical;                    /* 只允许纵向拖拽调整大小 */
+    line-height: 1.6;
+}
+
+.form-textarea:focus {
+    outline: none;                       /* 去掉浏览器默认的蓝色外框 */
+    border-color: #A83A1A;               /* 聚焦时边框变深红 */
+}
+
+.form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid rgba(139, 37, 0, 0.15);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: #2C2826;
+    background-color: #FFFFFF;
+    cursor: pointer;                     /* 鼠标移上去变成手指 */
+}
+
+/* 开庭按钮 */
+.start-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #8B2500;           /* 暗红色背景 */
+    color: #FFFFFF;                      /* 白色文字 */
+    border: none;                        /* 去掉默认边框 */
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'Noto Serif SC', serif; /* 按钮也用衬线字体 */
+    letter-spacing: 3px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+
+.start-btn:hover {
+    background-color: #A83A1A;           /* 鼠标悬停时颜色变亮一点 */
+}
+
+/* ========== 庭审页面 ========== */
+
+#court {
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+/* ========== 阶段进度条 ========== */
+
+.phase-bar {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(139, 37, 0, 0.08);
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+}
+
+.phase-bar-label {
+    font-size: 11px;
+    color: #9E9895;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.phase-steps {
+    display: flex;
+    align-items: center;
+}
+
+/* 每个阶段步骤 */
+.phase-step {
+    flex: 1;                             /* 平均分配宽度 */
+    display: flex;
+    flex-direction: column;              /* 子元素纵向排列（圆点在上，文字在下）*/
+    align-items: center;
+    position: relative;                  /* 为连接线做定位参考 */
+}
+
+/* 圆点 */
+.phase-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;                  /* 50% = 正圆 */
+    display: flex;
+    align-items: center;
+    justify-content: center;             /* 水平也居中，让数字在圆心 */
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    position: relative;                  /* 让圆点盖在连接线上面 */
+    z-index: 1;
+}
+
+/* 圆点的三种状态 */
+.phase-dot.done {
+    background-color: #8B2500;
+    color: #FFFFFF;
+}
+
+.phase-dot.current {
+    background-color: #FDF6F3;
+    color: #8B2500;
+    border: 2px solid #8B2500;
+}
+
+.phase-dot.upcoming {
+    background-color: #F0EEEB;
+    color: #9E9895;
+    border: 1px solid rgba(139, 37, 0, 0.08);
+}
+
+/* 步骤文字标签 */
+.phase-step-label {
+    font-size: 10px;
+    color: #9E9895;
+    text-align: center;
+}
+
+.phase-step-label.current-label {
+    color: #8B2500;
+    font-weight: 500;
+}
+
+.phase-step-label.done-label {
+    color: #6B6360;
+}
+
+/* 步骤之间的连接线 */
+.phase-connector {
+    position: absolute;
+    top: 11px;                           /* 对齐圆点中心 */
+    left: calc(50% + 14px);              /* 从圆点右侧开始 */
+    width: calc(100% - 28px);            /* 到下一个圆点左侧结束 */
+    height: 2px;
+    background-color: #E8E5E1;
+}
+
+.phase-connector.done-line {
+    background-color: #8B2500;
+}
+
+/* ========== 对话区域 ========== */
+
+.messages-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;                           /* 每条消息之间的间距 */
+    margin-bottom: 16px;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;                    /* 内容超出高度时出现滚动条 */
+    padding: 4px 0;
+}
+
+/* 单条消息 */
+.msg {
+    display: flex;
+    gap: 0;
+    padding: 0;
+}
+
+/* 左侧颜色条 */
+.msg-bar {
+    width: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;                      /* 不允许被压缩 */
+    margin-right: 12px;
+}
+
+/* 消息主体 */
+.msg-body {
+    flex: 1;
+    min-width: 0;                        /* 防止长文字撑破布局 */
+}
+
+.msg-speaker {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    letter-spacing: 0.3px;
+}
+
+.msg-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #2C2826;
+}
+
+/* 法官消息 */
+.msg-judge .msg-bar { background-color: #8B2500; }
+.msg-judge .msg-speaker { color: #8B2500; }
+
+/* 用户消息 */
+.msg-user .msg-bar { background-color: #185FA5; }
+.msg-user .msg-speaker { color: #185FA5; }
+
+/* AI律师消息 */
+.msg-ai .msg-bar { background-color: #5F5E5A; }
+.msg-ai .msg-speaker { color: #5F5E5A; }
+
+/* 系统消息 */
+.msg-system .msg-bar { background-color: #9E9895; }
+.msg-system .msg-speaker { color: #9E9895; }
+.msg-system .msg-content { color: #9E9895; font-size: 13px; }
+
+/* ========== 输入区域 ========== */
+
+.input-area {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;               /* 底部对齐，按钮贴着输入框底边 */
+    background-color: #FFFFFF;
+    border: 1px solid rgba(139, 37, 0, 0.15);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.input-textarea {
+    flex: 1;                             /* 占满剩余空间 */
+    border: none;
+    outline: none;
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: #2C2826;
+    background: transparent;             /* 透明背景，融入容器 */
+    resize: none;                        /* 禁止拖拽调整大小 */
+    line-height: 1.6;
+}
+
+.send-btn {
+    padding: 8px 18px;
+    background-color: #8B2500;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Noto Sans SC', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;                 /* 按钮文字不换行 */
+}
+
+.send-btn:hover {
+    background-color: #A83A1A;
+}

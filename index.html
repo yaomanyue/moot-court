@@ -8,39 +8,52 @@
     <meta charset="UTF-8">
     <!-- 浏览器标签页上显示的标题 -->
     <title>模拟法庭</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <!-- 正文，用户看到的内容都放这里 -->
 <body>
   <!-- 开庭区域 -->
-  <div id="setup">
-    <!-- 一级标题 -->
-    <h1>模拟法庭</h1>
-    <p>案情描述</p>
-    <textarea id="case-input" rows="6" placeholder="请输入案情事实、当事人信息、诉讼请求…"></textarea>
-     
-     <p>你的身份</p>
-    <select id="role-select">
-      <option value="plaintiff">原告律师</option>
-      <option value="defendant">被告律师</option>
-    </select>
-    
-    <br><br>
-    <button id="start-btn">开庭</button>
-  </div>
-    <!-- 阶段显示条 -->
-    <div id="phase-bar" style="display:none;">
-        <span id="phase-name">开庭陈述</span>
-        <button id="next-phase-btn">进入下一阶段 →</button>
-    </div> 
-   
-    <!-- 庭审区域，默认隐藏 -->
-    <div id="court" style="display: none;">
-     <!-- 对话显示区域 -->
-      <div id="messages"></div>
-      <textarea id="input" rows="3" placeholder="输入你的发言…"></textarea>
-      <button id="send-btn">发言</button>
-  <!-- 输入区域 -->
-     </div>
+<div id="setup">
+    <div class="setup-header">
+        <h1 class="setup-title">模 拟 法 庭</h1>
+        <p class="setup-subtitle">中国民事庭审模拟系统</p>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">案情描述</label>
+        <textarea id="case-input" class="form-textarea" rows="6" placeholder="请输入案情事实、当事人信息、诉讼请求…"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">你的身份</label>
+        <select id="role-select" class="form-select">
+            <option value="plaintiff">原告律师</option>
+            <option value="defendant">被告律师</option>
+        </select>
+    </div>
+
+    <button id="start-btn" class="start-btn">开 庭</button>
+</div>
+<!-- 庭审区域，默认隐藏 -->
+<div id="court" style="display: none;">
+
+    <!-- 阶段进度条 -->
+    <div id="phase-bar" class="phase-bar">
+        <div class="phase-bar-label">庭审进程</div>
+        <div id="phase-steps" class="phase-steps"></div>
+    </div>
+
+    <!-- 对话显示区域 -->
+    <div id="messages" class="messages-area"></div>
+
+    <!-- 输入区域 -->
+    <div class="input-area">
+        <textarea id="input" class="input-textarea" rows="2" placeholder="输入你的发言…"></textarea>
+        <button id="send-btn" class="send-btn">发言</button>
+    </div>
+
+</div>
 
   <script src="app.js"></script>
 </body>
