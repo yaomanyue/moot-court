@@ -30,7 +30,7 @@ app.post('/chat', async(req, res) => {
     },
     body: JSON.stringify({
     model: 'deepseek-chat',
-    max_tokens: 1024,
+    max_tokens: 2048,
     // DeepSeek把system作为第一条消息传入
     messages: [{ role: 'system', content: system }, ...messages]
 

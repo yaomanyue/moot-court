@@ -121,7 +121,7 @@ AI扮演：${getAiLawyerName()}
 
 ### 第一阶段｜开庭陈述
 - 宣布开庭，要求原告陈述诉请与事实理由
-- 要求被告答辩
+- 要求被告答辩(追问内容不得重复、禁止追问被告方已经明确回复或者阐明的问题)
 - 必要时追问不清楚的事实点
 
 ### 第二阶段｜争议焦点归纳
@@ -134,7 +134,7 @@ AI扮演：${getAiLawyerName()}
 2. 原告举证完毕后，请被告律师对原告证据逐一进行质证（围绕真实性、合法性、关联性）
 3. 被告质证完毕后，请被告律师向法庭出示全部证据
 4. 被告举证完毕后，请原告律师对被告证据逐一进行质证
-每个步骤完成后，你可以针对证据矛盾点、缺失点进行追问
+每个步骤完成后，你可以针对证据矛盾点、缺失点进行追问(追问内容不得重复、禁止追问原被告双方已经明确回复或者阐明的问题)，确保证据环节的严密性和针对性。
 
 **举证环节特别规则**：
 - 本庭审为文字模拟，所有证据以文字陈述方式呈现
@@ -143,13 +143,13 @@ AI扮演：${getAiLawyerName()}
 - 如需引用证人陈述，直接引述证词内容即可
 
 ### 第四阶段｜法庭辩论
-- 明确辩论围绕既定争议焦点
+- 明确辩论围绕既定的争议焦点
 - 阻止重复事实陈述
-- 必要时就法律适用、举证责任追问
+- 必要时就法律适用、举证责任追问(追问内容不得重复、禁止追问原被告双方已经明确回复或者阐明的问题)
 - **重要**：你需要关注双方发言的实质内容，当双方观点开始重复、论据出现实质雷同、没有提出新的有效论点时，你应当主动宣布"法庭辩论阶段结束"，不要让辩论无意义地拖延
 
 ### 第五阶段｜最后陈述
-- 分别要求原告、被告进行最后陈述
+- 分别要求原告、被告进行最后陈述(追问内容不得重复、禁止追问原被告双方已经明确回复或者阐明的问题)
 - 最后陈述应围绕争议焦点进行总结，不应引入新的事实或证据
 
 ### 第六阶段｜裁决
@@ -184,6 +184,22 @@ function getLawyerSystem() {
 - 如需引用证人陈述，直接以书面证词形式引述内容即可
 
 每次发言不超过200字，第一人称直接发言，无旁白。`
+}
+
+// 生成裁决 AI 的 system prompt
+function getVerdictSystem() {
+  return `案情背景：${caseText}
+
+你是一名具有多年民事审判经验的中国法官，现在需要根据庭审全部记录作出裁决。
+
+裁决要求：
+- 必须当庭宣判，禁止择期宣判，禁止休庭评议
+- 裁决内容必须完整，包括：事实认定、裁判理由、判决主文
+- 事实认定要具体，引用庭审中双方提交的证据和质证意见
+- 裁判理由要援引具体法律条文
+- 判决主文要明确、可执行
+- 使用真实法官语气，克制、中性
+- 不受字数限制，确保裁决完整`
 }
 
 // 生成复盘分析的 system prompt
@@ -364,7 +380,7 @@ function updatePhaseBar() {
 // 【改动】sendToRole：给某个角色发 API 请求
 // 不再操作 history，只负责"把庭审记录+system prompt发给API，拿到回复"
 // history 的写入由调用方（runDispatchLoop）统一管理
-async function sendToRole(systemPrompt) {
+async function sendToRole(systemPrompt, lastSpeaker, lastContent) {
   // 把庭审记录拼成文本，作为这次请求的上下文
   const transcript = buildTranscript()
 
@@ -379,7 +395,7 @@ async function sendToRole(systemPrompt) {
       messages: [
         {
           role: 'user',
-          content: `以下是庭审记录：\n${transcript}\n\n请你根据庭审记录，进行你的发言。`
+          content: `庭审记录（背景参考）：\n${transcript}\n\n当前情况：\n刚才发言的是：${lastSpeaker}\n发言内容：${lastContent}\n\n请根据当前阶段"${phases[currentPhase].name}"的职责，针对当前情况进行发言。`
         }
       ]
     })
@@ -439,6 +455,7 @@ ${transcript}
     currentPhase = phaseNum
     updatePhaseBar()
     console.log(`[调度] 阶段更新：${oldPhaseName} → ${phases[currentPhase].name}`)
+    history.push({ speaker: '系统', content: `进入新阶段："${phases[currentPhase].name}"` })
     addMessage('系统', `进入新阶段："${phases[currentPhase].name}"`)
   }
 
@@ -494,6 +511,7 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
 
       // 如果已经是最后一个阶段（裁决），触发复盘后退出
       if (currentPhase >= phases.length - 1) {
+        await runVerdict()
         await runDebrief()
         return
       }
@@ -506,7 +524,13 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
 
     if (next.includes('法官')) {
       // === 该法官说话 ===
-      const reply = await sendToRole(getJudgeSystem())
+      // 如果当前是裁决阶段，交给裁决 agent 处理
+      if (currentPhase >= phases.length - 1) {
+        await runVerdict()
+        await runDebrief()
+        return
+      }
+      const reply = await sendToRole(getJudgeSystem(), lastSpeaker, lastContent)
       addMessage('法官', reply)
       // 把法官的发言存进庭审记录
       history.push({ speaker: '法官', content: reply })
@@ -518,7 +542,7 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
 
     if (next.includes('对方律师')) {
       // === 该对方律师说话 ===
-      const reply = await sendToRole(getLawyerSystem())
+      const reply = await sendToRole(getLawyerSystem(), lastSpeaker, lastContent)
       const lawyerName = getAiLawyerName()
       addMessage(lawyerName, reply)
       // 把律师的发言存进庭审记录
@@ -538,6 +562,30 @@ async function runDispatchLoop(lastSpeaker, lastContent) {
   // 如果循环用完了20次还没结束，说明出了问题
   console.warn('调度循环达到上限，强制停止')
   addMessage('系统', '调度循环达到上限，已停止。')
+}
+
+// 裁决 agent：用完整庭审记录生成裁决
+async function runVerdict() {
+  addMessage('系统', '正在生成裁决……')
+  // 拼接完整的庭审记录，不用摘要
+  const fullTranscript = history.map(h => `${h.speaker}：${h.content}`).join('\n')
+
+  const response = await fetch('/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system: getVerdictSystem(),
+      messages: [
+        {
+          role: 'user',
+          content: `以下是本案完整的庭审记录：\n${fullTranscript}\n\n请根据以上庭审记录，作出裁决。`
+        }
+      ]
+    })
+  })
+  const data = await response.json()
+  addMessage('法官', data.reply)
+  history.push({ speaker: '法官', content: data.reply })
 }
 
 // 触发复盘分析

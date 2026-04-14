@@ -19,7 +19,7 @@ body {
 /* ========== 开庭前页面 ========== */
 
 #setup {
-    max-width: 480px;           /* 最大宽度 480px，不会撑满整个屏幕 */
+    max-width: 640px;           /* 最大宽度 480px，不会撑满整个屏幕 */
     margin: 60px auto;          /* 上方留 60px，auto 表示左右自动居中 */
     padding: 0 20px;            /* 左右留 20px 内边距，防止贴边 */
 }
@@ -113,9 +113,9 @@ body {
 /* ========== 庭审页面 ========== */
 
 #court {
-    max-width: 700px;
+    max-width: 1000px;
     margin: 30px auto;
-    padding: 0 20px;
+    padding: 0 40px;
 }
 
 /* ========== 阶段进度条 ========== */
@@ -220,7 +220,7 @@ body {
     gap: 12px;                           /* 每条消息之间的间距 */
     margin-bottom: 16px;
     min-height: 200px;
-    max-height: 500px;
+    max-height: 600px;
     overflow-y: auto;                    /* 内容超出高度时出现滚动条 */
     padding: 4px 0;
 }
